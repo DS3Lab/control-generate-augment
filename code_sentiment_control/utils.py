@@ -2,7 +2,6 @@ import torch
 import numpy as np
 from torch.autograd import Variable
 from collections import defaultdict, Counter, OrderedDict
-
 class OrderedCounter(Counter, OrderedDict):
     'Counter that remembers the order elements are first encountered'
 
@@ -12,9 +11,9 @@ class OrderedCounter(Counter, OrderedDict):
     def __reduce__(self):
         return self.__class__, (OrderedDict(self),)
 
-def to_var(x, volatile=False):
+def to_var(x, cuda2, volatile=False):
     if torch.cuda.is_available():
-        x = x.cuda()
+        x = x.to(cuda2)
     return Variable(x, volatile=volatile)
 
 
@@ -79,3 +78,33 @@ def expierment_name(args, ts):
     exp_name += "TS=%s"%ts
 
     return exp_name
+from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
+
+def sentiment_analyzer_scores(sentence):
+    analyser = SentimentIntensityAnalyzer()
+    score = analyser.polarity_scores(sentence)
+    return score['neg'], score['neu'], score['pos'], score['compound']
+
+def sentiment_labeler(data):
+    labels = np.zeros(4)
+    labels = np.reshape(labels,(1,4))
+    for idx, s in enumerate(data):
+        print(idx)
+
+        l = np.asarray(sentiment_analyzer_scores(s))
+        l = np.reshape(l, (1, 4))
+
+        labels = np.vstack((labels, l))
+
+    labels = np.delete(labels, 0, 0)
+    return labels
+'''
+sentiment_analyzer_scores("The phone is super cool.")
+import pandas as pd
+data = pd.read_csv("data/yelp_train.csv")
+data = data['review'].values
+data = np.delete(data, 27054, 0)
+labels = sentiment_labeler(data)
+
+'''
+
