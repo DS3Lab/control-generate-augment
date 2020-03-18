@@ -81,16 +81,13 @@ y.to_csv("data/y_yelp_valid.csv", index=False)
 ####################
 import pandas as pd
 import numpy as np
-file = pd.read_csv("data/yelp_train.csv")
+file = pd.read_csv("data/yelp_train.csv")['review']
 labels = pd.read_csv("data/y_yelp_train.csv")
 labels = labels.drop(labels.columns[0], axis=1)
 
 
-l = labels.values
-l = np.argmax(labels,axis=1)
-
-for i in range(4):
+labels = labels.values
+labels = np.argmax(labels,axis=1)
 
 
-import pandas as pd
-pd.read_csv("data/sentiment.csv")
+

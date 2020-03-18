@@ -105,7 +105,7 @@ class RNN_discr(nn.Module):
 
         #self.embedding = nn.Embedding(input_dim, embedding_dim)
 
-        self.rnn = nn.RNN(input_dim, hidden_dim)
+        self.rnn = nn.GRU(input_dim, hidden_dim)
 
         self.fc = nn.Linear(hidden_dim, output_dim)
 
@@ -113,12 +113,44 @@ class RNN_discr(nn.Module):
         # text = [sent len, batch size]
 
         # embedded = [sent len, batch size, emb dim]
-
+       # print("text device: ", text.device)
+        print("inout: ", text.size())
         output, hidden = self.rnn(text)
-
+        print("hidden: ",hidden.size())
         # output = [sent len, batch size, hid dim]
         # hidden = [1, batch size, hid dim]
 
        # assert torch.equal(output[-1, :, :], hidden.squeeze(0))
 
         return self.fc(hidden.squeeze(0))
+
+
+class NewRNN_discr(nn.Module):
+    def __init__(self, input_dim,hidden_dim, output_dim, n_layers, bidirectional, dropout):
+        super().__init__()
+
+        #self.embedding = nn.Embedding(input_dim, embedding_dim)
+        self.dropout = nn.Dropout(dropout)
+        self.rnn = nn.GRU(input_dim,
+                           hidden_dim,
+                           num_layers=n_layers,
+                           bidirectional=bidirectional,
+                           dropout=dropout,
+                         )
+
+        self.fc = nn.Linear(hidden_dim * 2, output_dim)
+
+    def forward(self, text):
+        # text = [sent len, batch size]
+        # embedded = [sent len, batch size, emb dim]
+       # print("text device: ", text.device)
+        output, hidden = self.rnn(text)
+
+        hidden = self.dropout(torch.cat((hidden[-2, :, :], hidden[-1, :, :]), dim=1))
+
+        # output = [sent len, batch size, hid dim]
+        # hidden = [1, batch size, hid dim]
+
+       # assert torch.equal(output[-1, :, :], hidden.squeeze(0))
+
+        return self.fc(hidden)

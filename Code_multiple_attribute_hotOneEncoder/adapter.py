@@ -11,27 +11,7 @@ from sklearn.preprocessing import OneHotEncoder
 from sklearn.model_selection import train_test_split
 from sklearn.utils import shuffle
 from langdetect import detect
-from langdetect.lang_detect_exception import LangDetectException
-
-
 ###### PARAMS ######
-
-### reading the labels ###
-
-# -----------------------------------
-#            {   0 if negative      |
-# sentiment ={                      |
-#            {   1 if positive      |
-# -----------------------------------
-#             {  0 if present       |
-# label     = {                     |
-#             {  1 if past          |
-# -----------------------------------
-# 00 -> 1000
-# 01 -> 0100
-# 10 -> 0010
-# 11 -> 0001
-
 
 class TenseDataset:
 
@@ -64,20 +44,15 @@ class TenseDataset:
         for i in range(self.dataset.shape[0]):
             print(i)
             sentence = self.dataset.text.iloc[i]
-            try:
-                tag, sentence = self.pos(sentence)
-                if tag == "pres":
-                    labels.append(0)
-                if tag == "pas":
-                    labels.append(1)
-                if tag == 'no':
-                    labels.append(-1)
-            except IndexError:
-                print(sentence)
+            tag, sentence = self.pos(sentence)
+            if tag == "pres":
+                labels.append(0)
+            if tag == "pas":
+                labels.append(1)
+            if tag == 'no':
+                labels.append(-1)
 
         return labels
-
-
 class SentimentDataset:
 
     def __init__(self, dataset, n_class):
@@ -200,7 +175,7 @@ class SentimentDataset:
             summary = self.remove_key(self.summary, min_key)
             max_key = [*summary][0]
             max_dataset = self.datasets[max_key]
-            idx = np.arange((int(min_dataset.shape[0] * 1.25)))
+            idx = np.arange((int(min_dataset.shape[0]*1.25)))
             print("Minority Class: {} Majority Class: {}".format(min_dataset.shape[0], len(idx)))
             max_dataset = max_dataset.loc[idx]
             dataset = pd.concat((min_dataset, max_dataset))
@@ -212,14 +187,13 @@ class SentimentDataset:
             summary = self.remove_key(self.summary, middle_key)
             max_key = [*summary][0]
             max_dataset = self.datasets[max_key]
-            idx = np.arange((middle_dataset.shape[0] + max_dataset.shape[0]) // 2)
+            idx = np.arange((middle_dataset.shape[0] + max_dataset.shape[0])//2)
             dataset = pd.concat((min_dataset, middle_dataset, max_dataset.loc[idx]))
             return dataset.reset_index().drop(['index'], axis=1)
 
 
 class DatasetAdapter:
-    def __init__(self, datapath, samples, data_review, threshold, n_classes, assignment, category='restaurant',
-                 storing=None):
+    def __init__(self, datapath, samples, data_review, threshold, n_classes, assignment, category='restaurant', storing=None):
         '''
 
         :param datapath: where yelp is stored
@@ -230,8 +204,11 @@ class DatasetAdapter:
         :param assignment: string 'hard' (categorical based on ratings), 'soft' (continuous based on vader), 'soft_hard'(categorical based on vader)
         :param category: bussiness we are interested. Default is 'restaurant
         '''
+        if samples > 0:
 
-        self.dataset = pd.read_csv(datapath, nrows=samples)
+            self.dataset = pd.read_csv(datapath, nrows=samples)
+        else:
+            self.dataset = pd.read_csv(datapath)
         self.category = category
         self.review_data = []
         self.sent_thr = threshold['sentence']
@@ -245,31 +222,35 @@ class DatasetAdapter:
         if category == 'restaurant':
             self.restaurant_codes()
         self.tokens_numb = []
+        self.samples = samples
+
 
     def adaptation(self, loading=False, sentiment_dataset=None):
 
-        if loading == False:
+        if loading==False:
             print("1: find resturants")
 
-            self.find_restaurants()
+            restaurants = self.find_restaurants()
+            restaurants.to_csv("total_restaurants.csv", index=False)
+            return restaurants
             sentimentBuilder = SentimentDataset(self.restaurants, self.n_classes['sentiment'])
             print("2: Assembling sentiment dataset")
 
-            sentiment_dataset = sentimentBuilder.assembling(
-                self.assignment)  # the sentiment dataset is the referenced one. On this one we compute all the necessary infomation
+            sentiment_dataset = sentimentBuilder.assembling(self.assignment) # the sentiment dataset is the referenced one. On this one we compute all the necessary infomation
             sentiment_dataset = sentiment_dataset.reset_index().drop(['index'], axis=1)
-            sentiment_dataset.to_csv("sentimet_data/sentiment.csv", index=False)
-            # sentiment_dataset.to_csv("sentiment_data/sentiment.csv", index=False)
-            print("3: Cleaning sentiment dataset")
-            sentences = self.preprocessing(sentiment_dataset)
-            print("sentences_shape: ", sentences.shape[0])
-            sentiment_dataset.text = sentences
-            # sentiment_dataset.to_csv("sentimet_data/sentiment_proc.csv", index=False)
+            sentiment_dataset.to_csv("sentimet_data/sentiment" + str(self.samples) + ".csv", index=False)
+            #sentiment_dataset.to_csv("sentiment_data/sentiment.csv", index=False)
+            return "end"
+        print("3: Cleaning sentiment dataset")
+        sentences = self.preprocessing(sentiment_dataset)
+        print("sentences_shape: ", sentences.shape[0])
+        sentiment_dataset.text = sentences
+        #sentiment_dataset.to_csv("sentimet_data/sentiment_proc.csv", index=False)
 
-            print("4: Cleaning languages")
+        print("4: Cleaning languages")
 
-            sentiment_dataset = self.language_cleaning(sentiment_dataset)
-            sentiment_dataset.to_csv("language.csv", index=False)
+        sentiment_dataset = self.language_cleaning(sentiment_dataset)
+        sentiment_dataset.to_csv("language.csv", index=False)
 
         tenseBuilder = TenseDataset(dataset=sentiment_dataset, n_class=2)
         labels = tenseBuilder.labeling()
@@ -279,24 +260,25 @@ class DatasetAdapter:
         labels.to_csv("sentimet_data/labels.csv", index=False)
         dataset = pd.concat((sentiment_dataset, labels), axis=1)
         dataset = dataset.drop(drop_idx)
-        labels = self.labels_mapping(dataset[['stars', 'tense']])
+        labels = self.labels_mapping(dataset[['stars','tense']])
 
-        dataset = dataset.reset_index().drop(['index'], axis=1)
-        labels = labels.reset_index().drop(['index'], axis=1)
+        dataset = dataset.reset_index().drop(['index'], axis= 1)
+        labels = labels.reset_index().drop(['index'], axis= 1)
+
 
         return dataset, labels
 
     def storing(self, X, y):
         X, y = shuffle(X, y, random_state=42)
-        X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=self.test_size, random_state=42)
+        X_train, X_val, X_train, X_val = train_test_split(X, y, test_size=self.test_size, random_state=42)
         X_train.to_csv(self.storing_path + "yelp_train.csv", index=False)
         X_val.to_csv(self.storing_path + "yelp_valid.csv", index=False)
-        y_train.to_csv(self.storing_path + "y_yelp_train.csv", index=False)
-        y_val.to_csv(self.storing_path + "y_yelp_valid.csv", index=False)
+        X_train.to_csv(self.storing_path + "y_yelp_train.csv", index=False)
+        X_val.to_csv(self.storing_path + "y_yelp_valid.csv", index=False)
 
     def labels_mapping(self, labels):
 
-        # for now it is just two classes
+        #for now it is just two classes
 
         y = []
         for i, j in zip(labels.stars, labels.tense):
@@ -308,13 +290,15 @@ class DatasetAdapter:
                 y.append(2)
             if i == 1 and j == 1:
                 y.append(3)
-        y = pd.DataFrame({'labels': y})
+        y = pd.DataFrame({'labels':y})
 
         enc = OneHotEncoder(handle_unknown='ignore')
         enc.fit(y)
         y = enc.transform(y).toarray().astype(int)
         y = pd.DataFrame(y)
         return y
+
+
 
     # private method
     def restaurant_codes(self):
@@ -345,6 +329,7 @@ class DatasetAdapter:
 
         restaurants = self.filter_sentence(restaurants)
         self.restaurants = restaurants
+        return self.restaurants
 
     def filter_sentence(self, dataset):
         '''
@@ -393,21 +378,21 @@ class DatasetAdapter:
         reviews = []
         i = 0
 
-        # dataset = self.language_cleaning(dataset)
-        # dataset = dataset.reset_index().drop(['index'], axis = 1)
+        #dataset = self.language_cleaning(dataset)
+        #dataset = dataset.reset_index().drop(['index'], axis = 1)
 
         tokenizer = PunktSentenceTokenizer()
         data = dataset['text']
         for idx, review in enumerate(data):
             collected_words = []
-            if idx % 1000 == 0:
+            if idx%1000==0:
                 print(idx)
-            # for sentence in tokenizer.tokenize(review):
+            #for sentence in tokenizer.tokenize(review):
             words = word_tokenize(review)
             if len(words) > self.word_thr:
                 words = words[:self.word_thr]
             words = [self.fix_word(word) for word in words]
-            # collected_words += words
+            #collected_words += words
 
             review = ' '.join(words)
             reviews.append(review)
@@ -427,48 +412,29 @@ class DatasetAdapter:
         print("Positive: {} | Negative: {} | Neutral: {} ".format(positive, negative, neutral))
 
 
-from langdetect.lang_detect_exception import LangDetectException
-
-
-def language_cleaning(dataset):
-    no_eng_idx = []
-    for idx, data in enumerate(dataset.text):
-        print(idx)
-        try:
-            if detect(data) != 'en':
-                no_eng_idx.append(idx)
-        except LangDetectException:
-            print("exception")
-            no_eng_idx.append(idx)
-
-    return no_eng_idx
 
 
 datapath = "Yelp_data/yelp_review.csv"
-samples = 1000000
+samples = 10
 data_review = "Yelp_data/yelp_academic_dataset_business.json"
-n_classes = {'sentiment': 2, 'tense': 2}
-threshold = {'sentence': 10, 'word': 15}
-storing = {'path': "data/", 'test_size': 0.1}
-adapter = DatasetAdapter(datapath=datapath, samples=samples, data_review=data_review, threshold=threshold,
-                         n_classes=n_classes, assignment='hard', storing=storing)
+n_classes = {'sentiment':2, 'tense':2}
+threshold = {'sentence':10, 'word':15}
+storing = {'path':"data/", 'test_size':0.1}
+adapter = DatasetAdapter(datapath=datapath, samples=samples, data_review=data_review, threshold=threshold, n_classes=n_classes, assignment='hard', storing=storing)
+#sentiment = pd.read_csv("sentimet_data/sentiment.csv")
 
-sentiment_proc = pd.read_csv("sentimet_data/sentiment_proc.csv")
-sentiment_proc = sentiment_proc.drop(['index'], axis=1)
-sentiment_proc = sentiment_proc.dropna(axis=0)
-sentiment_proc = sentiment_proc.reset_index().drop(['index'], axis=1)
-idx_no_eng = language_cleaning(sentiment_proc)
-sentiment = sentiment_proc.drop(idx_no_eng, axis=0).reset_index().drop(['index'], axis=1)
+#sentiment = sentiment.drop([60988], axis = 0).reset_index()
+#sentiment = sentiment.dropna(axis=0)
 
-empty_idx = []
-for i, t in enumerate(sentiment.text):
-    if any(c.isalpha() for c in t) == False:
-        empty_idx.append(i)
+X= adapter.adaptation()
+#adapter.storing(X, y)
 
-sentiment = sentiment.drop(empty_idx, axis=0)
-sentiment = sentiment.reset_index().drop(['index'], axis=1)
 
-X, y = adapter.adaptation(loading=True, sentiment_dataset=sentiment)
-X = X.drop(['stars', 'tense'], axis=1)
-adapter.storing(X, y)
 
+
+#sentiment = pd.read_csv("sentimet_data/sentiment.csv")
+#sentiment_proc = pd.read_csv("sentimet_data/sentiment_proc.csv")
+
+
+
+dataset = pd.read_csv(datapath)

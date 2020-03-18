@@ -12,7 +12,7 @@ from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 
 class Processor(Dataset):
 
-    def __init__(self, data_dir, split, create_data, dataset, rows=1000,  **kwargs ):
+    def __init__(self, data_dir, split, create_data, dataset, rows=1000,what="review" , **kwargs ):
 
         super().__init__()
         self.data_dir = data_dir
@@ -26,7 +26,7 @@ class Processor(Dataset):
         self.raw_labels_path = os.path.join(data_dir, 'y'+ '_' + dataset + '_' + split +".csv")
         self.data_file = dataset + '_' + split + '.json'  # TODO da vedere cosa fare
         self.vocab_file = dataset + '_' + 'vocab.json'
-
+        self.what=what
         if create_data:
             print("Creating new %s yelp data." % split.upper())
             self._create_data()
@@ -93,8 +93,12 @@ class Processor(Dataset):
         tokenizer = TweetTokenizer(preserve_case=False)
 
         data = defaultdict(dict)
-        file = pd.read_csv(self.raw_data_path, nrows=self.rows)['text']
-        labels = pd.read_csv(self.raw_labels_path, nrows=self.rows)
+        if self.rows > 0:
+            file = pd.read_csv(self.raw_data_path, nrows=self.rows)[self.what]
+            labels = pd.read_csv(self.raw_labels_path, nrows=self.rows)
+        else:
+            file = pd.read_csv(self.raw_data_path)[self.what]
+            labels = pd.read_csv(self.raw_labels_path)
 
         print("labels_size {} Data Size {}".format(labels.shape[0],file.shape[0]))
 
@@ -156,7 +160,10 @@ class Processor(Dataset):
             i2w[len(w2i)] = st
             w2i[st] = len(w2i)
         print("PATH: ", self.raw_data_path)
-        file = pd.read_csv(self.raw_data_path, nrows=self.rows)['text']
+        if self.rows > 0:
+            file = pd.read_csv(self.raw_data_path, nrows=self.rows)['text']
+        else:
+            file = pd.read_csv(self.raw_data_path)['text']
         print("Data size: ", file.shape, )
         file = file.dropna(axis=0)
         for i, line in enumerate(file):
