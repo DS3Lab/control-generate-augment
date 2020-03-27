@@ -110,3 +110,4 @@ time,att_latent,attr_size,back,batch_size,bidirectional,coeff,data_dir,date,delt
 2020-Mar-25-16:47:51,100,2,True,16,False,0.0025,data,2020-Mar-24-10:20:58,1.0,0,fc,20000.0,0.5,300,30,True,,0.1,False,2,50,20,256,50,standard,32,0.001,30,20,5,6.0,gru,-1,True,3300,static,0.3,12000
 2020-Mar-25-17:02:06,100,2,True,32,False,0.0025,data,,0.5,0,fc,20000.0,0.5,300,30,,,0.1,True,2,50,20,256,50,standard,32,0.001,30,20,1,,gru,-1,True,3300,cyclical,0.7,12000
 2020-Mar-25-17:58:09,100,3,True,32,False,0.0025,data,,0.5,0,fc,20000.0,0.5,300,30,,,0.1,True,3,50,20,256,50,standard,32,0.001,30,20,1,,gru,-1,True,3300,cyclical,0.7,12000
+2020-Mar-26-13:48:31,100,2,True,32,False,0.0025,data,,0.5,0,fc,20000.0,0.5,300,30,,,0.1,True,1,50,20,256,50,standard,32,0.001,30,20,1,,gru,-1,True,3300,cyclical,0.7,12000
