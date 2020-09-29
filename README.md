@@ -6,7 +6,7 @@ PyTorch code for the EMNLP 2020 paper "Control, Generate and Augment: A Scalabel
 
 ## Data Download
 
-Please download the YELP restaurants review data from [here ](https://github.com/shentianxiao/language-style-transfer (edited)) and the IMDB 50K movie review from [here](https://www.kaggle.com/lakshmi25npathi/imdb-dataset-of-50k-movie-reviews)
+Please download the YELP restaurants review data from [here ](https://github.com/shentianxiao/language-style-transfer (edited)) and the IMDB 50K movie review from [here](https://www.kaggle.com/lakshmi25npathi/imdb-dataset-of-50k-movie-reviews). The preprocessing of the data can be executed following the procedure explained in the supplementary materials of the paper "Control, Generate and Augment: A Scalabel Framework for Multi-Attributes Controlled Text Generation"
 #### Data Preprocessing
 
 To obtain the multi-attributes dataset used please run first
@@ -73,6 +73,9 @@ to obtain all the different attribute matching accuracy for the generated senten
 ```bash
 python UniversalSentenceEvaluator.py
 ```
+
+### Model Checkpoints
+In the folder Generated you will find examples of our generated sentences, running both single and multi-attribute controls. In addition, the model checkpoints for each of these experiments are provided alongside with the parameters used for the experiments
 
 ## Reproducibility Information
 
