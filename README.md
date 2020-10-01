@@ -1,8 +1,7 @@
 # Control, Generate and Augment: A Scalabel Framework for Multi-Attributes Controlled Text Generation
 ## Introduction
-PyTorch code for the EMNLP 2020 paper "Control, Generate and Augment: A Scalabel Framework for Multi-Attributes Controlled Text Generation". Slides of our EMNLP 2020 talk are avialable [here](). 
 
-
+PyTorch code for the Findings of EMNLP 2020 paper "Control, Generate and Augment: A Scalabel Framework for Multi-Attributes Controlled Text Generation". Slides of our EMNLP 2020 talk are avialable [here](). 
 
 ## Data Download
 
